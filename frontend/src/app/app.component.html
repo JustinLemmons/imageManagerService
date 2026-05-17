@@ -1,0 +1,15 @@
+<button (click)="getHealth()">Health Check</button>
+<h1 *ngIf="healthMessage">{{ healthMessage }}</h1>
+
+<br /><br />
+
+<input type="file" accept="image/*" (change)="onFileSelected($event)" />
+
+<br /><br />
+
+<!-- Preview -->
+<img *ngIf="previewUrl" [src]="previewUrl" width="200" />
+
+<br /><br />
+
+<button (click)="uploadImage()" [disabled]="!selectedFile">Upload Image</button>
