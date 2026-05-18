@@ -1,15 +1,20 @@
 package com.justinlemmons.imagemanagerservice.controller;
 
+import com.justinlemmons.imagemanagerservice.service.ImageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200/")
 public class ImageController {
+    private final ImageService imageService;
+
+    public ImageController(ImageService imageService){
+        this.imageService = imageService;
+    }
 
     @GetMapping("/health")
     public String health(){
@@ -17,10 +22,7 @@ public class ImageController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<String> upload(@RequestParam("file") MultipartFile file) {
-        System.out.println("File Name: "+ file.getOriginalFilename());
-        System.out.println("File Content: "+ file.getContentType());
-        return ResponseEntity.ok(file.getOriginalFilename());
-
+    public ResponseEntity<String> upload(@RequestParam("file") MultipartFile file) throws IOException {
+        return ResponseEntity.ok(imageService.uploadImage(file));
     }
 }
