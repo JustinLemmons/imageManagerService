@@ -13,15 +13,13 @@ import java.io.IOException;
 @Slf4j
 public class ImageService {
     private final GridFsTemplate gridFsTemplate;
-    private final MongoTemplate mongoTemplate;
 
-    public ImageService(GridFsTemplate gridFsTemplate, MongoTemplate mongoTemplate){
+    public ImageService(GridFsTemplate gridFsTemplate){
         this.gridFsTemplate = gridFsTemplate;
-        this.mongoTemplate = mongoTemplate;
     }
 
     public String uploadImage(MultipartFile file) throws IOException {
-        log.info("Writing to MongoDB database: {}", mongoTemplate.getDb().getName());
+        log.info("Writing image to database {}", this.gridFsTemplate.toString());
 
         ObjectId id = gridFsTemplate.store(
                 file.getInputStream(),
