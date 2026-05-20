@@ -1,4 +1,4 @@
-<div class="backdrop" *ngIf="isModalVisible" (click)="onModalCancel()">
+<div class="backdrop" *ngIf="isModalVisible" (click)="onDeleteCancel()">
   <div class="modal" (click)="$event.stopPropagation()">
     <img [src]="selectedImageUrl" width="100" />
     <p>Delete this image from the database?</p>

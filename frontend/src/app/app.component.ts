@@ -1,12 +1,11 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, ElementRef, ViewChild } from '@angular/core';
 import { ImageService } from './services/image.service';
 import { CommonModule } from '@angular/common';
 import { ConfirmDeleteModalComponent } from './components/confirm-delete-modal/confirm-delete-modal.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CommonModule, ConfirmDeleteModalComponent],
+  imports: [CommonModule, ConfirmDeleteModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
@@ -22,6 +21,9 @@ export class AppComponent {
   selectedImageUrl: string | null = null;
   isModalVisible: boolean = false;
   selectedImageId: string | null = null;
+  isUploading: boolean = false;
+
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   constructor(private imageService: ImageService) {}
 
@@ -44,6 +46,7 @@ export class AppComponent {
 
     this.selectedFile = file;
     this.previewUrl = URL.createObjectURL(this.selectedFile);
+    this.isUploading = true;
   }
 
   uploadImage(): void {
@@ -85,6 +88,7 @@ export class AppComponent {
     fileInput.value = '';
     this.previewUrl = null;
     this.selectedFile = null;
+    this.isUploading = false;
   }
 
   selectImage(item: { id: string; url: string }) {
@@ -110,5 +114,9 @@ export class AppComponent {
   onDeleteCancel() {
     this.isModalVisible = false;
     this.selectedImageUrl = '';
+  }
+
+  triggerUpload() {
+    this.fileInput.nativeElement.click();
   }
 }
