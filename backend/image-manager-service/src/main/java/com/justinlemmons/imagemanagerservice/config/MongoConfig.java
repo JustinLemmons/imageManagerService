@@ -29,6 +29,11 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
         return MongoClients.create(uri);
     }
 
+    /**
+     * Explicitly declaring that gridFsTemplate interacts w/ the notated document in MongoDB
+     * As the parsing engine to identify this document is not being picked up in the
+     * application.properties file causing the subtle bug to default to test document.
+     */
     @Bean
     public GridFsTemplate gridFsTemplate(MongoDatabaseFactory dbFactory,
                                          MongoConverter converter) {

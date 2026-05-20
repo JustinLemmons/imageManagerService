@@ -3,7 +3,13 @@
 
 <br /><br />
 
-<input type="file" accept="image/*" (change)="onFileSelected($event)" />
+<input
+  type="file"
+  accept="image/*"
+  (change)="onFileSelected($event)"
+  #fileInput
+/>
+<button (click)="removeUploadedImage(fileInput)">Cancel</button>
 
 <br /><br />
 
@@ -13,3 +19,24 @@
 <br /><br />
 
 <button (click)="uploadImage()" [disabled]="!selectedFile">Upload Image</button>
+
+<button (click)="loadAllImages()">All Images Revealed</button>
+
+<button (click)="clearImages()">Clear Images From Screen</button>
+
+<div *ngFor="let item of imageUrls">
+  <img
+    *ngIf="isImageVisible"
+    [src]="item.url"
+    width="200"
+    (click)="selectImage(item)"
+  />
+</div>
+
+<app-confirm-delete-modal
+  [selectedImageUrl]="selectedImageUrl"
+  [isModalVisible]="isModalVisible"
+  (onConfirm)="onDeleteConfirm()"
+  (onCancel)="onDeleteCancel()"
+>
+</app-confirm-delete-modal>

@@ -24,4 +24,18 @@ export class ImageService {
       responseType: 'text',
     });
   }
+
+  loadAllImages(): Observable<string[]> {
+    return this.http.get<string[]>(this.baseImage + '/images');
+  }
+
+  getImage(id: string): Observable<Blob> {
+    return this.http.get(`${this.baseImage}/images/${id}`, {
+      responseType: 'blob',
+    });
+  }
+
+  removeImage(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseImage}/images/${id}`);
+  }
 }
