@@ -1,80 +1,90 @@
-<div class="container mt-4">
-  <div class="row mb-3">
-    <div class="col">
-      <h3 class="fw-bold">Image Manager</h3>
+<div class="app-shell">
+  <div class="container mt-4">
+    <div class="row mb-3">
+      <div class="col">
+        <h3 class="fw-bold">Image Manager</h3>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="row mb-4">
-  <div class="col d-flex flex-wrap gap-2">
-    <button class="btn btn-primary" (click)="triggerUpload()">
-      <i class="bi bi-upload me-2"></i>
-      Upload
-    </button>
-    <button
-      class="btn btn-secondary"
-      (click)="removeUploadedImage(fileInput)"
-      [disabled]="!isUploading"
-    >
-      <i class="bi bi-x-circle me-2"></i>
-      Cancel
-    </button>
+  <div class="row mb-4">
+    <div class="col d-flex flex-wrap gap-2">
+      <button class="btn btn-primary" (click)="triggerUpload()">
+        <i class="bi bi-upload me-2"></i>
+        Upload
+      </button>
+      <button class="btn btn-primary">Create My Own Image</button>
+      <button
+        class="btn btn-secondary"
+        (click)="removeUploadedImage(fileInput)"
+        [disabled]="!isUploading"
+      >
+        <i class="bi bi-x-circle me-2"></i>
+        Cancel
+      </button>
+    </div>
   </div>
-</div>
-<input
-  type="file"
-  accept="image/*"
-  (change)="onFileSelected($event)"
-  #fileInput
-  class="d-none"
-/>
+  <input
+    type="file"
+    accept="image/*"
+    (change)="onFileSelected($event)"
+    #fileInput
+    class="d-none"
+  />
+  <div *ngIf="uploadSuccess" class="alert alert-success mt-2">
+    Your image has been successfully uploaded.
+  </div>
 
-<!-- Initial check on connectivity between Angular UI to Spring Boot
+  <!-- Initial check on connectivity between Angular UI to Spring Boot
 <button (click)="getHealth()">Health Check</button>
 <h1 *ngIf="healthMessage">{{ healthMessage }}</h1> -->
 
-<!-- Preview -->
-<img
-  *ngIf="previewUrl"
-  [src]="previewUrl"
-  width="200"
-  style="margin-bottom: 20px"
-/>
+  <!-- Preview -->
+  <img
+    *ngIf="previewUrl"
+    [src]="previewUrl"
+    width="200"
+    style="margin-bottom: 20px"
+  />
 
-<div class="row mb-4">
-  <div class="col d-flex flex-wrap gap-2">
-    <button
-      class="btn btn-secondary"
-      (click)="uploadImage()"
-      [hidden]="!selectedFile"
-    >
-      Upload Image
-    </button>
-    <button class="btn btn-secondary" (click)="loadAllImages()">
-      All Images Revealed
-    </button>
-    <button class="btn btn-secondary" (click)="clearImages()">
-      Clear Images From Screen
-    </button>
+  <div class="row mb-4">
+    <div class="col d-flex flex-wrap gap-2">
+      <button
+        class="btn btn-secondary"
+        (click)="uploadImage()"
+        [hidden]="!selectedFile"
+      >
+        Upload Image
+      </button>
+      <button class="btn btn-secondary" (click)="loadAllImages()">
+        All Images Revealed
+      </button>
+      <button
+        class="btn btn-secondary"
+        (click)="clearImages()"
+        [disabled]="!this.isImageVisible"
+      >
+        Clear Images From Screen
+      </button>
+    </div>
   </div>
-</div>
 
-<div class="image-list">
-  <div *ngFor="let item of imageUrls">
-    <img
-      *ngIf="isImageVisible"
-      [src]="item.url"
-      width="200"
-      (click)="selectImage(item)"
-    />
+  <div class="image-list">
+    <div *ngFor="let item of imageUrls">
+      <img
+        *ngIf="isImageVisible"
+        [src]="item.url"
+        width="200"
+        (click)="selectImage(item)"
+      />
+    </div>
   </div>
-</div>
 
-<app-confirm-delete-modal
-  [selectedImageUrl]="selectedImageUrl"
-  [isModalVisible]="isModalVisible"
-  (onConfirm)="onDeleteConfirm()"
-  (onCancel)="onDeleteCancel()"
->
-</app-confirm-delete-modal>
+  <app-confirm-delete-modal
+    [selectedImageUrl]="selectedImageUrl"
+    [isModalVisible]="isModalVisible"
+    (onConfirm)="onDeleteConfirm()"
+    (onCancel)="onDeleteCancel()"
+  >
+  </app-confirm-delete-modal>
+</div>

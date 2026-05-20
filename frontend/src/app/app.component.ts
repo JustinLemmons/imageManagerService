@@ -2,6 +2,7 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 import { ImageService } from './services/image.service';
 import { CommonModule } from '@angular/common';
 import { ConfirmDeleteModalComponent } from './components/confirm-delete-modal/confirm-delete-modal.component';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -22,6 +23,8 @@ export class AppComponent {
   isModalVisible: boolean = false;
   selectedImageId: string | null = null;
   isUploading: boolean = false;
+  isImagesInMemory: boolean = false;
+  uploadSuccess: boolean = false;
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
@@ -52,26 +55,48 @@ export class AppComponent {
   uploadImage(): void {
     if (!this.selectedFile) return;
 
-    this.imageService
-      .uploadImage(this.selectedFile)
-      .subscribe((response: string) => {
+    this.imageService.uploadImage(this.selectedFile).subscribe({
+      next: (response: string) => {
         console.log(response);
-      });
+        this.uploadSuccess = true;
+        this.selectedFile = null;
+        this.previewUrl = null;
+      },
+      error: (error) => {
+        console.error(error);
+        this.uploadSuccess = false;
+      },
+    });
   }
 
   loadAllImages() {
-    this.imageUrls = [];
-    this.isImageVisible = true;
-    this.imageService.loadAllImages().subscribe((ids) => {
-      ids.forEach((id) => {
-        this.imageService.getImage(id).subscribe((blob) => {
-          this.imageUrls.push({
-            id: id,
-            url: URL.createObjectURL(blob),
-          });
-        });
+    this.imageService
+      .loadAllImages()
+      .pipe(
+        switchMap((ids) => {
+          if (!ids.length) return of([]);
+
+          return forkJoin(
+            ids.map((id) =>
+              this.imageService.getImage(id).pipe(
+                map((blob) => ({
+                  id,
+                  url: URL.createObjectURL(blob),
+                })),
+                catchError(() => of({ id, url: null }))
+              )
+            )
+          );
+        })
+      )
+      .subscribe({
+        next: (images) => {
+          this.imageUrls = images.filter((img) => img.url !== null);
+          this.isImageVisible = true;
+          this.isImagesInMemory = this.imageUrls.length > 0;
+        },
+        error: (err) => console.error('Failed to load images', err),
       });
-    });
   }
 
   getImage(id: string) {
@@ -89,6 +114,7 @@ export class AppComponent {
     this.previewUrl = null;
     this.selectedFile = null;
     this.isUploading = false;
+    this.uploadSuccess = false;
   }
 
   selectImage(item: { id: string; url: string }) {
