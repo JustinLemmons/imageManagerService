@@ -64,6 +64,7 @@ export class AppComponent implements OnDestroy {
       next: (response: string) => {
         console.log(response);
         this.uploadSuccess = true;
+        setTimeout(() => (this.uploadSuccess = false), 3000);
         this.selectedFile = null;
         this.revokeBlobUrl(this.previewUrl);
         this.previewUrl = null;
