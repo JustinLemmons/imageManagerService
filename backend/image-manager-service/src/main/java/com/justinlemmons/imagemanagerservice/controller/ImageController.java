@@ -1,7 +1,9 @@
 package com.justinlemmons.imagemanagerservice.controller;
 
+import com.justinlemmons.imagemanagerservice.dto.GenerateImageRequest;
 import com.justinlemmons.imagemanagerservice.service.ImageGenerationService;
 import com.justinlemmons.imagemanagerservice.service.ImageService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.data.mongodb.gridfs.GridFsResource;
 import org.springframework.http.HttpStatus;
@@ -13,9 +15,9 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 @RestController
+@Slf4j
 @CrossOrigin(origins = "http://localhost:4200", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.DELETE})
 public class ImageController {
     private final ImageService imageService;
@@ -57,16 +59,14 @@ public class ImageController {
     }
 
     @PostMapping("/generate-image")
-    public Mono<ResponseEntity<byte[]>> generateImage(@RequestBody Map<String, String> body) {
-        String prompt = body.get("prompt");
-
-        return imageGenerationService.generateImage(prompt)
+    public Mono<ResponseEntity<byte[]>> generateImage(@RequestBody GenerateImageRequest generateImageRequest) {
+        return imageGenerationService.generateImage(generateImageRequest.prompt())
                 .map(imageBytes -> ResponseEntity.ok()
-                        .header("Content-Type", "image/png")
+                        .contentType(MediaType.IMAGE_PNG)
                         .body(imageBytes))
                 .onErrorResume(err -> {
-                    System.err.println("Controller error: " + err.getMessage());
-                    return Mono.just(ResponseEntity.status(500).<byte[]>build());
+                    log.error("Controller error: {}", err.getMessage());
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).<byte[]>build());
                 });
     }
 }
