@@ -1,8 +1,9 @@
 <div class="app-shell">
+  <h1>Image Manager App</h1>
   <div class="container mt-4">
     <div class="row mb-3">
       <div class="col">
-        <h3 class="fw-bold">Image Manager</h3>
+        <h3 class="fw-bold text-decoration-underline">Upload Your Image</h3>
       </div>
     </div>
   </div>
@@ -13,7 +14,6 @@
         <i class="bi bi-upload me-2"></i>
         Upload
       </button>
-      <button class="btn btn-primary">Create My Own Image</button>
       <button
         class="btn btn-secondary"
         (click)="removeUploadedImage(fileInput)"
@@ -87,4 +87,44 @@
     (onCancel)="onDeleteCancel()"
   >
   </app-confirm-delete-modal>
+
+  <div class="container mt-4">
+    <div class="row mb-3">
+      <div class="col">
+        <h3 class="fw-bold text-decoration-underline">Create Your Image</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <textarea
+      class="form-control shadow-sm"
+      rows="5"
+      placeholder="Create a fun image..."
+      #text
+    ></textarea>
+  </div>
+
+  <div class="mb=3">
+    <button
+      class="btn btn-primary px-4 py-2"
+      (click)="sendPrompt(text.value)"
+      [disabled]="isGenerating"
+    >
+      <span
+        *ngIf="isGenerating"
+        class="spinner-border spinner-border-sm me-2"
+        role="status"
+        aria-hidden="true"
+      ></span>
+      {{ isGenerating ? "Generating..." : "Create My Own Image" }}
+    </button>
+  </div>
+  <img
+    *ngIf="promptImage"
+    [src]="promptImage"
+    width="200"
+    class="mt-3"
+    style="margin-bottom: 20px"
+  />
 </div>

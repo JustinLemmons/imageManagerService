@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { ImageService } from './services/image.service';
 import { CommonModule } from '@angular/common';
 import { ConfirmDeleteModalComponent } from './components/confirm-delete-modal/confirm-delete-modal.component';
@@ -10,12 +10,12 @@ import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
-export class AppComponent {
+export class AppComponent implements OnDestroy {
   title = 'frontend';
   healthMessage = '';
 
   selectedFile: File | null = null;
-  previewUrl: string | ArrayBuffer | null = null;
+  previewUrl: string | null = null;
   imageUrl: string | undefined;
   imageUrls: { id: string; url: string }[] = [];
   isImageVisible: boolean = false;
@@ -25,6 +25,10 @@ export class AppComponent {
   isUploading: boolean = false;
   isImagesInMemory: boolean = false;
   uploadSuccess: boolean = false;
+
+  generatedBlob: Blob | undefined;
+  promptImage: string | null = null;
+  isGenerating: boolean = false;
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
@@ -47,6 +51,7 @@ export class AppComponent {
 
     if (!file) return;
 
+    this.revokeBlobUrl(this.previewUrl);
     this.selectedFile = file;
     this.previewUrl = URL.createObjectURL(this.selectedFile);
     this.isUploading = true;
@@ -60,6 +65,7 @@ export class AppComponent {
         console.log(response);
         this.uploadSuccess = true;
         this.selectedFile = null;
+        this.revokeBlobUrl(this.previewUrl);
         this.previewUrl = null;
       },
       error: (error) => {
@@ -111,6 +117,7 @@ export class AppComponent {
 
   removeUploadedImage(fileInput: HTMLInputElement) {
     fileInput.value = '';
+    this.revokeBlobUrl(this.previewUrl);
     this.previewUrl = null;
     this.selectedFile = null;
     this.isUploading = false;
@@ -144,5 +151,29 @@ export class AppComponent {
 
   triggerUpload() {
     this.fileInput.nativeElement.click();
+  }
+
+  sendPrompt(prompt: string): void {
+    this.isGenerating = true;
+    this.imageService.generateImage(prompt).subscribe({
+      next: (img) => {
+        this.revokeBlobUrl(this.promptImage);
+        this.promptImage = URL.createObjectURL(img);
+        this.isGenerating = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.isGenerating = false;
+      },
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.revokeBlobUrl(this.promptImage);
+    this.revokeBlobUrl(this.previewUrl);
+  }
+
+  private revokeBlobUrl(url: string | null): void {
+    if (url) URL.revokeObjectURL(url);
   }
 }

@@ -38,4 +38,12 @@ export class ImageService {
   removeImage(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseImage}/images/${id}`);
   }
+
+  generateImage(prompt: string): Observable<Blob> {
+    return this.http.post(
+      `${this.baseImage}/generate-image`,
+      { prompt: prompt },
+      { responseType: 'blob' }
+    );
+  }
 }
