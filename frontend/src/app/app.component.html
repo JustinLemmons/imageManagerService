@@ -38,7 +38,7 @@
       <button
         class="btn btn-secondary"
         (click)="clearImages()"
-        [disabled]="!isImageVisible"
+        [disabled]="!isImageVisible || imageUrls.length === 0"
       >
         Clear Images From Screen
       </button>
@@ -58,7 +58,10 @@
   </div>
 
   <div *ngIf="selectedImageIds.size > 0" class="mt-3">
-    <button class="btn btn-danger" (click)="openDeleteModal(); $event.stopPropagation()">
+    <button
+      class="btn btn-danger"
+      (click)="openDeleteModal(); $event.stopPropagation()"
+    >
       Delete Selected ({{ selectedImageIds.size }})
     </button>
   </div>
