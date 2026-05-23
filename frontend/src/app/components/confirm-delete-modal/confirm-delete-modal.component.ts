@@ -10,6 +10,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 })
 export class ConfirmDeleteModalComponent {
   @Input() selectedImageUrl: string | null = null;
+  @Input() selectedCount: number = 0;
   @Input() isModalVisible: boolean = false;
 
   @Output() onConfirm = new EventEmitter<void>();

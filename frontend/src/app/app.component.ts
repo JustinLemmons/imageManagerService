@@ -21,7 +21,7 @@ export class AppComponent implements OnDestroy {
   isImageVisible: boolean = false;
   selectedImageUrl: string | null = null;
   isModalVisible: boolean = false;
-  selectedImageId: string | null = null;
+  selectedImageIds: Set<string> = new Set();
   isUploading: boolean = false;
   isImagesInMemory: boolean = false;
   uploadSuccess: boolean = false;
@@ -29,6 +29,7 @@ export class AppComponent implements OnDestroy {
   generatedBlob: Blob | undefined;
   promptImage: string | null = null;
   isGenerating: boolean = false;
+  promptError: boolean = false;
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
@@ -61,13 +62,13 @@ export class AppComponent implements OnDestroy {
     if (!this.selectedFile) return;
 
     this.imageService.uploadImage(this.selectedFile).subscribe({
-      next: (response: string) => {
-        console.log(response);
+      next: () => {
         this.uploadSuccess = true;
-        setTimeout(() => (this.uploadSuccess = false), 3000);
+        setTimeout(() => (this.uploadSuccess = false), 2000);
         this.selectedFile = null;
         this.revokeBlobUrl(this.previewUrl);
         this.previewUrl = null;
+        this.loadAllImages();
       },
       error: (error) => {
         console.error(error);
@@ -126,28 +127,39 @@ export class AppComponent implements OnDestroy {
   }
 
   selectImage(item: { id: string; url: string }) {
-    this.selectedImageId = item.id;
-    this.selectedImageUrl = item.url;
+    if (this.selectedImageIds.has(item.id)) {
+      this.selectedImageIds.delete(item.id);
+    } else {
+      this.selectedImageIds.add(item.id);
+    }
+  }
+
+  openDeleteModal() {
+    if (this.selectedImageIds.size === 0) return;
+    if (this.selectedImageIds.size === 1) {
+      const id = [...this.selectedImageIds][0];
+      this.selectedImageUrl = this.imageUrls.find((img) => img.id === id)?.url ?? null;
+    }
     this.isModalVisible = true;
   }
 
   onDeleteConfirm() {
-    if (!this.selectedImageId) return;
+    if (this.selectedImageIds.size === 0) return;
 
-    this.imageService.removeImage(this.selectedImageId).subscribe(() => {
-      // remove from local array so UI updates immediately
+    forkJoin(
+      [...this.selectedImageIds].map((id) => this.imageService.removeImage(id))
+    ).subscribe(() => {
       this.imageUrls = this.imageUrls.filter(
-        (item) => item.id !== this.selectedImageId
+        (item) => !this.selectedImageIds.has(item.id)
       );
-      this.isModalVisible = false;
-      this.selectedImageId = null;
+      this.selectedImageIds.clear();
       this.selectedImageUrl = null;
+      this.isModalVisible = false;
     });
   }
 
   onDeleteCancel() {
     this.isModalVisible = false;
-    this.selectedImageUrl = '';
   }
 
   triggerUpload() {
@@ -155,6 +167,12 @@ export class AppComponent implements OnDestroy {
   }
 
   sendPrompt(prompt: string): void {
+    if (!prompt.trim()) {
+      this.promptError = true;
+      setTimeout(() => (this.promptError = false), 2000);
+      return;
+    }
+    this.promptError = false;
     this.isGenerating = true;
     this.imageService.generateImage(prompt).subscribe({
       next: (img) => {

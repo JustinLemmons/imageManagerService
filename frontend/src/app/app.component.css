@@ -9,3 +9,7 @@
   flex-direction: column;
   gap: 20px;
 }
+
+.image-selected {
+  outline: 6px solid #0d6efd;
+}

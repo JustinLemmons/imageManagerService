@@ -1,7 +1,8 @@
 <div class="backdrop" *ngIf="isModalVisible" (click)="onDeleteCancel()">
   <div class="confirm-modal" (click)="$event.stopPropagation()">
-    <img [src]="selectedImageUrl" width="80" />
-    <p>Delete this image from the database?</p>
+    <img *ngIf="selectedCount === 1" [src]="selectedImageUrl" width="80" />
+    <p *ngIf="selectedCount === 1">Delete this image from the database?</p>
+    <p *ngIf="selectedCount > 1">Delete {{ selectedCount }} images from the database?</p>
     <div class="actions">
       <button (click)="onDeleteConfirm()">OK</button>
       <button (click)="onDeleteCancel()">Cancel</button>
