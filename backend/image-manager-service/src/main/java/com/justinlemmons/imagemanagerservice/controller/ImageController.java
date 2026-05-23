@@ -18,7 +18,6 @@ import java.util.List;
 
 @RestController
 @Slf4j
-@CrossOrigin(origins = "http://localhost:4200", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.DELETE})
 public class ImageController {
     private final ImageService imageService;
     private final ImageGenerationService imageGenerationService;
