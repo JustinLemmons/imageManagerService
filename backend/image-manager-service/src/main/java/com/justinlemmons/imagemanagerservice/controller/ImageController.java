@@ -4,8 +4,6 @@ import com.justinlemmons.imagemanagerservice.dto.GenerateImageRequest;
 import com.justinlemmons.imagemanagerservice.service.ImageGenerationService;
 import com.justinlemmons.imagemanagerservice.service.ImageService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
-import org.springframework.data.mongodb.gridfs.GridFsResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -38,17 +36,13 @@ public class ImageController {
     }
 
     @GetMapping("/images")
-    public ResponseEntity<List<String>> getAllImages() throws IOException {
+    public ResponseEntity<List<String>> getAllImages() {
         return ResponseEntity.ok(imageService.getAllImages());
     }
 
     @GetMapping("/images/{id}")
-    public ResponseEntity<Resource> getImage(@PathVariable String id) {
-        GridFsResource resource = (GridFsResource) imageService.getImage(id);
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(resource.getContentType()))
-                .body(resource);
+    public ResponseEntity<String> getImage(@PathVariable String id) {
+        return ResponseEntity.ok(imageService.getImage(id));
     }
 
     @DeleteMapping("/images/{id}")

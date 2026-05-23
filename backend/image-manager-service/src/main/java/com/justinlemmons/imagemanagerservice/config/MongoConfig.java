@@ -5,10 +5,6 @@ import com.mongodb.client.MongoClients;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
-import org.springframework.data.mongodb.gridfs.GridFsTemplate;
-import org.springframework.context.annotation.Bean;
-import org.springframework.data.mongodb.core.convert.MongoConverter;
-import org.springframework.data.mongodb.MongoDatabaseFactory;
 
 @Configuration
 public class MongoConfig extends AbstractMongoClientConfiguration {
@@ -27,16 +23,5 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
     @Override
     public MongoClient mongoClient() {
         return MongoClients.create(uri);
-    }
-
-    /**
-     * Explicitly declaring that gridFsTemplate interacts w/ the notated document in MongoDB
-     * As the parsing engine to identify this document is not being picked up in the
-     * application.properties file causing the subtle bug to default to test document.
-     */
-    @Bean
-    public GridFsTemplate gridFsTemplate(MongoDatabaseFactory dbFactory,
-                                         MongoConverter converter) {
-        return new GridFsTemplate(dbFactory, converter);
     }
 }

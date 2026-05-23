@@ -1,61 +1,67 @@
 package com.justinlemmons.imagemanagerservice.service;
 
-import com.mongodb.client.gridfs.model.GridFSFile;
+import com.justinlemmons.imagemanagerservice.dao.S3ImageDao;
+import com.justinlemmons.imagemanagerservice.entity.ImageMetadata;
+import com.justinlemmons.imagemanagerservice.repository.ImageMetadataRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
-import org.springframework.core.io.Resource;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Slf4j
 public class ImageService {
-    private final GridFsTemplate gridFsTemplate;
 
-    public ImageService(GridFsTemplate gridFsTemplate){
-        this.gridFsTemplate = gridFsTemplate;
+    private final S3ImageDao s3ImageDao;
+    private final ImageMetadataRepository imageMetadataRepository;
+
+    public ImageService(S3ImageDao s3ImageDao, ImageMetadataRepository imageMetadataRepository) {
+        this.s3ImageDao = s3ImageDao;
+        this.imageMetadataRepository = imageMetadataRepository;
     }
 
     public String uploadImage(MultipartFile file) throws IOException {
-        log.info("Writing image to database {}", this.gridFsTemplate.toString());
+        String s3Key = UUID.randomUUID() + "-" + file.getOriginalFilename();
 
-        ObjectId id = gridFsTemplate.store(
-                file.getInputStream(),
-                file.getOriginalFilename(),
-                file.getContentType()
-        );
-        return id.toString();
+        s3ImageDao.upload(s3Key, file.getBytes(), file.getContentType());
+
+        ImageMetadata metadata = ImageMetadata.builder()
+                .filename(file.getOriginalFilename())
+                .contentType(file.getContentType())
+                .size(file.getSize())
+                .s3Key(s3Key)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        String id = imageMetadataRepository.save(metadata).getId();
+        log.info("Uploaded image {} with S3 key {}", id, s3Key);
+        return id;
     }
 
-    public List<String> getAllImages(){
-        List<String> images = new ArrayList<>();
-        this.gridFsTemplate.find(new Query()).forEach(ids -> {
-            images.add(ids.getObjectId().toHexString());
-        });
-        return images;
+    public List<String> getAllImages() {
+        return imageMetadataRepository.findAll()
+                .stream()
+                .map(ImageMetadata::getId)
+                .toList();
     }
 
-    public Resource getImage(String id){
-        GridFSFile file =
-                gridFsTemplate.findOne(new Query(Criteria.where("_id").is(new ObjectId(id))));
+    public String getImage(String id) {
+        ImageMetadata metadata = imageMetadataRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Image not found: " + id));
 
-        if(file == null){
-            throw new RuntimeException("Image not found " + id);
-        }
-        return gridFsTemplate.getResource(file);
+        return s3ImageDao.generatePresignedUrl(metadata.getS3Key());
     }
 
     public void deleteImage(String id) {
-        gridFsTemplate.delete(
-                new Query(Criteria.where("_id").is(new ObjectId(id)))
-        );
+        ImageMetadata metadata = imageMetadataRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Image not found: " + id));
+
+        s3ImageDao.delete(metadata.getS3Key());
+        imageMetadataRepository.deleteById(id);
+        log.info("Deleted image {} with S3 key {}", id, metadata.getS3Key());
     }
 }
