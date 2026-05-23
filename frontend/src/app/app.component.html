@@ -1,68 +1,44 @@
 <div class="app-shell">
   <h1>Image Manager App</h1>
-  <div class="container mt-4">
-    <div class="row mb-3">
-      <div class="col">
-        <h3 class="fw-bold text-decoration-underline">Upload Your Image</h3>
-      </div>
-    </div>
+
+  <div class="d-flex gap-2 mb-4">
+    <button
+      class="btn"
+      [class.btn-primary]="activeView === 'upload'"
+      [class.btn-outline-primary]="activeView !== 'upload'"
+      (click)="setActiveView('upload')"
+    >
+      Upload An Image
+    </button>
+    <button
+      class="btn"
+      [class.btn-primary]="activeView === 'generate'"
+      [class.btn-outline-primary]="activeView !== 'generate'"
+      (click)="setActiveView('generate')"
+    >
+      Create An Image
+    </button>
   </div>
 
-  <div class="row mb-4">
+  <app-upload-image
+    *ngIf="activeView === 'upload'"
+    (imageSaved)="loadAllImages()"
+  ></app-upload-image>
+
+  <app-generate-image
+    *ngIf="activeView === 'generate'"
+    (imageSaved)="loadAllImages()"
+  ></app-generate-image>
+
+  <div class="row mb-4 mt-4">
     <div class="col d-flex flex-wrap gap-2">
-      <button class="btn btn-primary" (click)="triggerUpload()">
-        <i class="bi bi-upload me-2"></i>
-        Upload
-      </button>
-      <button
-        class="btn btn-secondary"
-        (click)="removeUploadedImage(fileInput)"
-        [disabled]="!isUploading"
-      >
-        <i class="bi bi-x-circle me-2"></i>
-        Cancel
-      </button>
-    </div>
-  </div>
-  <input
-    type="file"
-    accept="image/*"
-    (change)="onFileSelected($event)"
-    #fileInput
-    class="d-none"
-  />
-  <div *ngIf="uploadSuccess" class="alert alert-success mt-2">
-    Your image has been successfully uploaded.
-  </div>
-
-  <!-- Initial check on connectivity between Angular UI to Spring Boot
-<button (click)="getHealth()">Health Check</button>
-<h1 *ngIf="healthMessage">{{ healthMessage }}</h1> -->
-
-  <!-- Preview -->
-  <img
-    *ngIf="previewUrl"
-    [src]="previewUrl"
-    width="200"
-    style="margin-bottom: 20px"
-  />
-
-  <div class="row mb-4">
-    <div class="col d-flex flex-wrap gap-2">
-      <button
-        class="btn btn-secondary"
-        (click)="uploadImage()"
-        [hidden]="!selectedFile"
-      >
-        Upload Image
-      </button>
       <button class="btn btn-secondary" (click)="loadAllImages()">
         All Images Revealed
       </button>
       <button
         class="btn btn-secondary"
         (click)="clearImages()"
-        [disabled]="!this.isImageVisible"
+        [disabled]="!isImageVisible"
       >
         Clear Images From Screen
       </button>
@@ -75,14 +51,14 @@
         [src]="item.url"
         class="img-fluid rounded"
         [class.image-selected]="selectedImageIds.has(item.id)"
-        (click)="selectImage(item)"
+        (click)="selectImage(item); $event.stopPropagation()"
         style="cursor: pointer; width: 100%; height: 150px; object-fit: cover"
       />
     </div>
   </div>
 
   <div *ngIf="selectedImageIds.size > 0" class="mt-3">
-    <button class="btn btn-danger" (click)="openDeleteModal()">
+    <button class="btn btn-danger" (click)="openDeleteModal(); $event.stopPropagation()">
       Delete Selected ({{ selectedImageIds.size }})
     </button>
   </div>
@@ -93,50 +69,5 @@
     [isModalVisible]="isModalVisible"
     (onConfirm)="onDeleteConfirm()"
     (onCancel)="onDeleteCancel()"
-  >
-  </app-confirm-delete-modal>
-
-  <div class="container mt-4">
-    <div class="row mb-3">
-      <div class="col">
-        <h3 class="fw-bold text-decoration-underline">Create Your Image</h3>
-      </div>
-    </div>
-  </div>
-
-  <div class="mb-3">
-    <textarea
-      class="form-control shadow-sm"
-      rows="5"
-      placeholder="Create a fun image..."
-      (input)="promptError = false"
-      #text
-    ></textarea>
-    <div *ngIf="promptError" class="alert alert-warning mt-2">
-      Please enter a prompt before generating an image.
-    </div>
-  </div>
-
-  <div class="mb=3">
-    <button
-      class="btn btn-primary px-4 py-2"
-      (click)="sendPrompt(text.value)"
-      [disabled]="isGenerating"
-    >
-      <span
-        *ngIf="isGenerating"
-        class="spinner-border spinner-border-sm me-2"
-        role="status"
-        aria-hidden="true"
-      ></span>
-      {{ isGenerating ? "Generating..." : "Create My Own Image" }}
-    </button>
-  </div>
-  <img
-    *ngIf="promptImage"
-    [src]="promptImage"
-    width="200"
-    class="mt-3"
-    style="margin-bottom: 20px"
-  />
+  ></app-confirm-delete-modal>
 </div>

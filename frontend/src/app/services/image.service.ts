@@ -16,7 +16,7 @@ export class ImageService {
     });
   }
 
-  uploadImage(file: File): Observable<string> {
+  uploadImage(file: Blob): Observable<string> {
     const formData = new FormData();
     formData.append('file', file);
 

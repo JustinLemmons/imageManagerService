@@ -1,0 +1,44 @@
+<div class="mb-3">
+  <textarea
+    class="form-control shadow-sm"
+    rows="5"
+    placeholder="Create a fun image..."
+    (input)="promptError = false"
+    #text
+  ></textarea>
+  <div *ngIf="promptError" class="alert alert-warning mt-2">
+    Please enter a prompt before generating an image.
+  </div>
+</div>
+
+<div class="mb-3">
+  <button
+    class="btn btn-primary px-4 py-2"
+    (click)="sendPrompt(text)"
+    [disabled]="isGenerating"
+  >
+    <span
+      *ngIf="isGenerating"
+      class="spinner-border spinner-border-sm me-2"
+      role="status"
+      aria-hidden="true"
+    ></span>
+    {{ isGenerating ? "Generating..." : "Create My Own Image" }}
+  </button>
+</div>
+
+<div *ngIf="promptImage">
+  <img
+    [src]="promptImage"
+    width="200"
+    class="mt-3"
+    style="margin-bottom: 20px; display: block"
+  />
+  <button class="btn btn-primary mt-2" (click)="saveGeneratedImage()">
+    Save Image
+  </button>
+</div>
+
+<div *ngIf="saveSuccess" class="alert alert-success mt-2">
+  Image saved to your gallery.
+</div>

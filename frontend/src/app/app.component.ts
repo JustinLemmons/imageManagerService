@@ -1,83 +1,36 @@
-import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { ImageService } from './services/image.service';
 import { CommonModule } from '@angular/common';
 import { ConfirmDeleteModalComponent } from './components/confirm-delete-modal/confirm-delete-modal.component';
+import { UploadImageComponent } from './components/upload-image/upload-image.component';
+import { GenerateImageComponent } from './components/generate-image/generate-image.component';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, ConfirmDeleteModalComponent],
+  imports: [CommonModule, ConfirmDeleteModalComponent, UploadImageComponent, GenerateImageComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
-export class AppComponent implements OnDestroy {
+export class AppComponent {
   title = 'frontend';
-  healthMessage = '';
 
-  selectedFile: File | null = null;
-  previewUrl: string | null = null;
-  imageUrl: string | undefined;
   imageUrls: { id: string; url: string }[] = [];
   isImageVisible: boolean = false;
   selectedImageUrl: string | null = null;
   isModalVisible: boolean = false;
   selectedImageIds: Set<string> = new Set();
-  isUploading: boolean = false;
   isImagesInMemory: boolean = false;
-  uploadSuccess: boolean = false;
 
-  generatedBlob: Blob | undefined;
-  promptImage: string | null = null;
-  isGenerating: boolean = false;
-  promptError: boolean = false;
-
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  activeView: 'upload' | 'generate' | null = null;
 
   constructor(private imageService: ImageService) {}
 
-  getHealth(): void {
-    if (this.healthMessage) {
-      this.healthMessage = '';
-      return;
-    }
-
-    this.imageService.getHealth().subscribe((response: string) => {
-      this.healthMessage = response;
-    });
+  setActiveView(view: 'upload' | 'generate'): void {
+    this.activeView = this.activeView === view ? null : view;
   }
 
-  onFileSelected(event: any): void {
-    const file: File = event.target.files[0];
-    console.log(file.type, file);
-
-    if (!file) return;
-
-    this.revokeBlobUrl(this.previewUrl);
-    this.selectedFile = file;
-    this.previewUrl = URL.createObjectURL(this.selectedFile);
-    this.isUploading = true;
-  }
-
-  uploadImage(): void {
-    if (!this.selectedFile) return;
-
-    this.imageService.uploadImage(this.selectedFile).subscribe({
-      next: () => {
-        this.uploadSuccess = true;
-        setTimeout(() => (this.uploadSuccess = false), 2000);
-        this.selectedFile = null;
-        this.revokeBlobUrl(this.previewUrl);
-        this.previewUrl = null;
-        this.loadAllImages();
-      },
-      error: (error) => {
-        console.error(error);
-        this.uploadSuccess = false;
-      },
-    });
-  }
-
-  loadAllImages() {
+  loadAllImages(): void {
     this.imageService
       .loadAllImages()
       .pipe(
@@ -87,10 +40,7 @@ export class AppComponent implements OnDestroy {
           return forkJoin(
             ids.map((id) =>
               this.imageService.getImage(id).pipe(
-                map((blob) => ({
-                  id,
-                  url: URL.createObjectURL(blob),
-                })),
+                map((blob) => ({ id, url: URL.createObjectURL(blob) })),
                 catchError(() => of({ id, url: null }))
               )
             )
@@ -107,26 +57,11 @@ export class AppComponent implements OnDestroy {
       });
   }
 
-  getImage(id: string) {
-    this.imageService.getImage(id).subscribe((blob) => {
-      this.imageUrl = URL.createObjectURL(blob);
-    });
-  }
-
-  clearImages() {
+  clearImages(): void {
     this.isImageVisible = false;
   }
 
-  removeUploadedImage(fileInput: HTMLInputElement) {
-    fileInput.value = '';
-    this.revokeBlobUrl(this.previewUrl);
-    this.previewUrl = null;
-    this.selectedFile = null;
-    this.isUploading = false;
-    this.uploadSuccess = false;
-  }
-
-  selectImage(item: { id: string; url: string }) {
+  selectImage(item: { id: string; url: string }): void {
     if (this.selectedImageIds.has(item.id)) {
       this.selectedImageIds.delete(item.id);
     } else {
@@ -134,7 +69,7 @@ export class AppComponent implements OnDestroy {
     }
   }
 
-  openDeleteModal() {
+  openDeleteModal(): void {
     if (this.selectedImageIds.size === 0) return;
     if (this.selectedImageIds.size === 1) {
       const id = [...this.selectedImageIds][0];
@@ -143,7 +78,7 @@ export class AppComponent implements OnDestroy {
     this.isModalVisible = true;
   }
 
-  onDeleteConfirm() {
+  onDeleteConfirm(): void {
     if (this.selectedImageIds.size === 0) return;
 
     forkJoin(
@@ -158,41 +93,12 @@ export class AppComponent implements OnDestroy {
     });
   }
 
-  onDeleteCancel() {
+  onDeleteCancel(): void {
     this.isModalVisible = false;
   }
 
-  triggerUpload() {
-    this.fileInput.nativeElement.click();
-  }
-
-  sendPrompt(prompt: string): void {
-    if (!prompt.trim()) {
-      this.promptError = true;
-      setTimeout(() => (this.promptError = false), 2000);
-      return;
-    }
-    this.promptError = false;
-    this.isGenerating = true;
-    this.imageService.generateImage(prompt).subscribe({
-      next: (img) => {
-        this.revokeBlobUrl(this.promptImage);
-        this.promptImage = URL.createObjectURL(img);
-        this.isGenerating = false;
-      },
-      error: (err) => {
-        console.error(err);
-        this.isGenerating = false;
-      },
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.revokeBlobUrl(this.promptImage);
-    this.revokeBlobUrl(this.previewUrl);
-  }
-
-  private revokeBlobUrl(url: string | null): void {
-    if (url) URL.revokeObjectURL(url);
+  @HostListener('document:click')
+  clearSelection(): void {
+    this.selectedImageIds.clear();
   }
 }

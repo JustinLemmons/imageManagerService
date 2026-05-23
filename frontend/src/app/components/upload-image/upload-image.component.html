@@ -1,0 +1,38 @@
+<div class="row mb-4">
+  <div class="col d-flex flex-wrap gap-2">
+    <button class="btn btn-primary" (click)="triggerUpload()">
+      <i class="bi bi-upload me-2"></i>
+      Upload
+    </button>
+    <button
+      class="btn btn-secondary"
+      (click)="removeUploadedImage()"
+      [disabled]="!isUploading"
+    >
+      <i class="bi bi-x-circle me-2"></i>
+      Cancel
+    </button>
+  </div>
+</div>
+
+<input
+  type="file"
+  accept="image/*"
+  (change)="onFileSelected($event)"
+  #fileInput
+  class="d-none"
+/>
+
+<div *ngIf="uploadSuccess" class="alert alert-success mt-2">
+  Your image has been successfully uploaded.
+</div>
+
+<img *ngIf="previewUrl" [src]="previewUrl" width="200" style="margin-bottom: 20px" />
+
+<div class="row mb-4">
+  <div class="col">
+    <button class="btn btn-secondary" (click)="uploadImage()" [hidden]="!selectedFile">
+      Upload Image
+    </button>
+  </div>
+</div>
