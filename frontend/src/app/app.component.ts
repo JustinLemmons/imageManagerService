@@ -40,7 +40,7 @@ export class AppComponent {
           return forkJoin(
             ids.map((id) =>
               this.imageService.getImage(id).pipe(
-                map((blob) => ({ id, url: URL.createObjectURL(blob) })),
+                map((url) => ({ id, url })),
                 catchError(() => of({ id, url: null }))
               )
             )

@@ -29,9 +29,9 @@ export class ImageService {
     return this.http.get<string[]>(this.baseImage + '/images');
   }
 
-  getImage(id: string): Observable<Blob> {
+  getImage(id: string): Observable<string> {
     return this.http.get(`${this.baseImage}/images/${id}`, {
-      responseType: 'blob',
+      responseType: 'text',
     });
   }
 
