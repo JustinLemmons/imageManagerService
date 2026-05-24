@@ -1,9 +1,13 @@
 package com.justinlemmons.imagemanagerservice.service;
 
 import com.justinlemmons.imagemanagerservice.dao.S3ImageDao;
+import com.justinlemmons.imagemanagerservice.dto.PagedResponse;
 import com.justinlemmons.imagemanagerservice.entity.ImageMetadata;
 import com.justinlemmons.imagemanagerservice.repository.ImageMetadataRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,11 +46,16 @@ public class ImageService {
         return id;
     }
 
-    public List<String> getAllImages() {
-        return imageMetadataRepository.findAll()
-                .stream()
+    public PagedResponse getAllImages(int page, int size) {
+        Page<ImageMetadata> result = imageMetadataRepository.findAll(
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
+        );
+
+        List<String> ids = result.getContent().stream()
                 .map(ImageMetadata::getId)
                 .toList();
+
+        return new PagedResponse(ids, result.getTotalElements(), result.getTotalPages(), page);
     }
 
     public String getImage(String id) {

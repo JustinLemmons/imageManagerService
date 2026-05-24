@@ -1,6 +1,7 @@
 package com.justinlemmons.imagemanagerservice.controller;
 
 import com.justinlemmons.imagemanagerservice.dto.GenerateImageRequest;
+import com.justinlemmons.imagemanagerservice.dto.PagedResponse;
 import com.justinlemmons.imagemanagerservice.service.ImageGenerationService;
 import com.justinlemmons.imagemanagerservice.service.ImageService;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +13,6 @@ import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.util.List;
 
 @RestController
 @Slf4j
@@ -36,8 +36,10 @@ public class ImageController {
     }
 
     @GetMapping("/images")
-    public ResponseEntity<List<String>> getAllImages() {
-        return ResponseEntity.ok(imageService.getAllImages());
+    public ResponseEntity<PagedResponse> getAllImages(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(imageService.getAllImages(page, size));
     }
 
     @GetMapping("/images/{id}")
