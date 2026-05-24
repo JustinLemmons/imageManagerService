@@ -22,6 +22,10 @@ export class AppComponent {
   selectedImageIds: Set<string> = new Set();
   isImagesInMemory: boolean = false;
 
+  currentPage: number = 0;
+  totalPages: number = 0;
+  totalElements: number = 0;
+
   activeView: 'upload' | 'generate' | null = null;
 
   constructor(private imageService: ImageService) {}
@@ -30,15 +34,19 @@ export class AppComponent {
     this.activeView = this.activeView === view ? null : view;
   }
 
-  loadAllImages(): void {
+  loadAllImages(page: number = 0): void {
     this.imageService
-      .loadAllImages()
+      .loadAllImages(page)
       .pipe(
-        switchMap((ids) => {
-          if (!ids.length) return of([]);
+        switchMap((response) => {
+          this.currentPage = response.currentPage;
+          this.totalPages = response.totalPages;
+          this.totalElements = response.totalElements;
+
+          if (!response.ids.length) return of([]);
 
           return forkJoin(
-            ids.map((id) =>
+            response.ids.map((id) =>
               this.imageService.getImage(id).pipe(
                 map((url) => ({ id, url })),
                 catchError(() => of({ id, url: null }))
@@ -55,6 +63,18 @@ export class AppComponent {
         },
         error: (err) => console.error('Failed to load images', err),
       });
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages - 1) {
+      this.loadAllImages(this.currentPage + 1);
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 0) {
+      this.loadAllImages(this.currentPage - 1);
+    }
   }
 
   clearImages(): void {

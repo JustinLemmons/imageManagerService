@@ -2,6 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
+export interface PagedResponse {
+  ids: string[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -25,8 +32,8 @@ export class ImageService {
     });
   }
 
-  loadAllImages(): Observable<string[]> {
-    return this.http.get<string[]>(this.baseImage + '/images');
+  loadAllImages(page: number = 0, size: number = 10): Observable<PagedResponse> {
+    return this.http.get<PagedResponse>(`${this.baseImage}/images?page=${page}&size=${size}`);
   }
 
   getImage(id: string): Observable<string> {
