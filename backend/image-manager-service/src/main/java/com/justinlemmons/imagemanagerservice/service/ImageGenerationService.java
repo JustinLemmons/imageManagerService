@@ -8,7 +8,9 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
+import java.time.Duration;
 import java.util.Base64;
 
 @Service
@@ -23,6 +25,12 @@ public class ImageGenerationService {
 
     @Value("${huggingFace.uri}")
     private String uri;
+
+    @Value("${huggingFace.retry.maxAttempts:2}")
+    private long maxRetryAttempts;
+
+    @Value("${huggingFace.retry.backoffSeconds:3}")
+    private long retryBackoffSeconds;
 
     private final WebClient webClient;
 
@@ -41,10 +49,15 @@ public class ImageGenerationService {
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, response ->
                         response.bodyToMono(String.class)
-                                .doOnNext(body -> log.error("HF Error: {}", body)) // logs exact HF error
+                                .doOnNext(body -> log.error("HF Error: {}", body))
                                 .flatMap(body -> Mono.error(new RuntimeException("HF API failed: " + body))))
                 .bodyToMono(ImageGenerationResponse.class)
                 .map(response -> Base64.getDecoder().decode(response.images().get(0).base64_json()))
-                .doOnError(err -> log.error("Error: {}", err.getMessage()));
+                .retryWhen(Retry.backoff(maxRetryAttempts, Duration.ofSeconds(retryBackoffSeconds))
+                        .filter(throwable -> !(throwable instanceof RuntimeException
+                                && throwable.getMessage().startsWith("HF API failed")))
+                        .doBeforeRetry(signal -> log.warn("Retrying HuggingFace request, attempt {}", signal.totalRetries() + 1))
+                        .onRetryExhaustedThrow((spec, signal) -> signal.failure()))
+                .doOnError(err -> log.error("Image generation failed: {}", err.getMessage()));
         }
 }
