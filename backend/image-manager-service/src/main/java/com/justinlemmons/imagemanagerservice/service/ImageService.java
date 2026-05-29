@@ -1,9 +1,9 @@
 package com.justinlemmons.imagemanagerservice.service;
 
+import com.justinlemmons.imagemanagerservice.dao.ImageMetadataDao;
 import com.justinlemmons.imagemanagerservice.dao.S3ImageDao;
 import com.justinlemmons.imagemanagerservice.dto.PagedResponse;
 import com.justinlemmons.imagemanagerservice.entity.ImageMetadata;
-import com.justinlemmons.imagemanagerservice.repository.ImageMetadataRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,11 +21,11 @@ import java.util.UUID;
 public class ImageService {
 
     private final S3ImageDao s3ImageDao;
-    private final ImageMetadataRepository imageMetadataRepository;
+    private final ImageMetadataDao imageMetadataDao;
 
-    public ImageService(S3ImageDao s3ImageDao, ImageMetadataRepository imageMetadataRepository) {
+    public ImageService(S3ImageDao s3ImageDao, ImageMetadataDao imageMetadataDao) {
         this.s3ImageDao = s3ImageDao;
-        this.imageMetadataRepository = imageMetadataRepository;
+        this.imageMetadataDao = imageMetadataDao;
     }
 
     public String uploadImage(MultipartFile file) throws IOException {
@@ -41,17 +41,25 @@ public class ImageService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        String id = imageMetadataRepository.save(metadata).getId();
+        String id;
+        try {
+            id = imageMetadataDao.save(metadata).getId();
+        } catch (Exception e) {
+            log.error("MongoDB write failed for S3 key {}, rolling back S3 upload", s3Key);
+            s3ImageDao.delete(s3Key);
+            throw e;
+        }
         log.info("Uploaded image {} with S3 key {}", id, s3Key);
         return id;
     }
 
     public PagedResponse getAllImages(int page, int size) {
-        Page<ImageMetadata> result = imageMetadataRepository.findAll(
+        Page<ImageMetadata> result = imageMetadataDao.findAll(
                 PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
         );
 
-        List<String> ids = result.getContent().stream()
+        List<String> ids = result.getContent()
+                .stream()
                 .map(ImageMetadata::getId)
                 .toList();
 
@@ -59,18 +67,18 @@ public class ImageService {
     }
 
     public String getImage(String id) {
-        ImageMetadata metadata = imageMetadataRepository.findById(id)
+        ImageMetadata metadata = imageMetadataDao.findById(id)
                 .orElseThrow(() -> new RuntimeException("Image not found: " + id));
 
         return s3ImageDao.generatePresignedUrl(metadata.getS3Key());
     }
 
     public void deleteImage(String id) {
-        ImageMetadata metadata = imageMetadataRepository.findById(id)
+        ImageMetadata metadata = imageMetadataDao.findById(id)
                 .orElseThrow(() -> new RuntimeException("Image not found: " + id));
 
         s3ImageDao.delete(metadata.getS3Key());
-        imageMetadataRepository.deleteById(id);
+        imageMetadataDao.deleteById(id);
         log.info("Deleted image {} with S3 key {}", id, metadata.getS3Key());
     }
 }

@@ -1,9 +1,9 @@
 package com.justinlemmons.imagemanagerservice.service;
 
+import com.justinlemmons.imagemanagerservice.dao.ImageMetadataDao;
 import com.justinlemmons.imagemanagerservice.dao.S3ImageDao;
 import com.justinlemmons.imagemanagerservice.dto.PagedResponse;
 import com.justinlemmons.imagemanagerservice.entity.ImageMetadata;
-import com.justinlemmons.imagemanagerservice.repository.ImageMetadataRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -32,7 +32,7 @@ class ImageServiceTest {
     private S3ImageDao s3ImageDao;
 
     @Mock
-    private ImageMetadataRepository imageMetadataRepository;
+    private ImageMetadataDao imageMetadataDao;
 
     @InjectMocks
     private ImageService imageService;
@@ -46,13 +46,13 @@ class ImageServiceTest {
         when(file.getSize()).thenReturn(4L);
 
         ImageMetadata saved = ImageMetadata.builder().id("abc123").build();
-        when(imageMetadataRepository.save(any())).thenReturn(saved);
+        when(imageMetadataDao.save(any())).thenReturn(saved);
 
         String result = imageService.uploadImage(file);
 
         assertThat(result).isEqualTo("abc123");
         verify(s3ImageDao).upload(anyString(), any(byte[].class), eq("image/png"));
-        verify(imageMetadataRepository).save(any(ImageMetadata.class));
+        verify(imageMetadataDao).save(any(ImageMetadata.class));
     }
 
     @Test
@@ -60,7 +60,7 @@ class ImageServiceTest {
         ImageMetadata m1 = ImageMetadata.builder().id("id1").build();
         ImageMetadata m2 = ImageMetadata.builder().id("id2").build();
         Page<ImageMetadata> page = new PageImpl<>(List.of(m1, m2), PageRequest.of(0, 10), 2);
-        when(imageMetadataRepository.findAll(any(Pageable.class))).thenReturn(page);
+        when(imageMetadataDao.findAll(any(Pageable.class))).thenReturn(page);
 
         PagedResponse response = imageService.getAllImages(0, 10);
 
@@ -73,7 +73,7 @@ class ImageServiceTest {
     @Test
     void getAllImages_whenEmpty_returnsEmptyList() {
         Page<ImageMetadata> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 10), 0);
-        when(imageMetadataRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
+        when(imageMetadataDao.findAll(any(Pageable.class))).thenReturn(emptyPage);
 
         PagedResponse response = imageService.getAllImages(0, 10);
 
@@ -87,7 +87,7 @@ class ImageServiceTest {
                 .id("abc123")
                 .s3Key("images/abc123-test.png")
                 .build();
-        when(imageMetadataRepository.findById("abc123")).thenReturn(Optional.of(metadata));
+        when(imageMetadataDao.findById("abc123")).thenReturn(Optional.of(metadata));
         when(s3ImageDao.generatePresignedUrl("images/abc123-test.png"))
                 .thenReturn("https://s3.amazonaws.com/bucket/images/abc123-test.png");
 
@@ -98,7 +98,7 @@ class ImageServiceTest {
 
     @Test
     void getImage_whenNotFound_throwsException() {
-        when(imageMetadataRepository.findById("notfound")).thenReturn(Optional.empty());
+        when(imageMetadataDao.findById("notfound")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> imageService.getImage("notfound"))
                 .isInstanceOf(RuntimeException.class)
@@ -111,17 +111,17 @@ class ImageServiceTest {
                 .id("abc123")
                 .s3Key("images/abc123-test.png")
                 .build();
-        when(imageMetadataRepository.findById("abc123")).thenReturn(Optional.of(metadata));
+        when(imageMetadataDao.findById("abc123")).thenReturn(Optional.of(metadata));
 
         imageService.deleteImage("abc123");
 
         verify(s3ImageDao).delete("images/abc123-test.png");
-        verify(imageMetadataRepository).deleteById("abc123");
+        verify(imageMetadataDao).deleteById("abc123");
     }
 
     @Test
     void deleteImage_whenNotFound_throwsException() {
-        when(imageMetadataRepository.findById("notfound")).thenReturn(Optional.empty());
+        when(imageMetadataDao.findById("notfound")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> imageService.deleteImage("notfound"))
                 .isInstanceOf(RuntimeException.class)
